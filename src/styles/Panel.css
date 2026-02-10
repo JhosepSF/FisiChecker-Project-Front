@@ -1,0 +1,424 @@
+/* =========================
+   Variables y resets
+========================= */
+:root{
+  /* paleta */
+  --c-text:#333;
+  --c-muted:#555;
+  --c-border:#e5e7eb;
+  --c-border-soft:#f0f0f0;
+  --c-bg:#fff;
+
+  --c-brand:#6a1b9a;
+  --c-brand-2:#8e24aa;
+
+  --c-ok-bg:#e6f6ec;   --c-ok-text:#1d6a37;
+  --c-warn-bg:#fff7e6; --c-warn-text:#6b3e00;
+  --c-bad-bg:#fde7e9;  --c-bad-text:#a1192a;
+  --c-na-bg:#eef2ff;   --c-na-text:#22306e;
+
+  --shadow:0 6px 12px rgba(0,0,0,.08);
+  --radius:12px;
+  --radius-lg:14px;
+  --focus-ring:0 0 0 3px color-mix(in srgb, var(--c-brand) 25%, transparent);
+  --gap:12px;
+  --fs-12:12px; --fs-13:13px; --fs-14:14px;
+
+  /* callout informativo (Qué se detectó) */
+  --c-info-bg: #eef2ff;        /* azul clarito */
+  --c-info-border: #c7d2fe;
+  --c-info-text: #22306e;
+
+  /* callout advertencia (Qué evalúa) — opcional por claridad */
+  --c-warn-bg: #fff7e6;
+  --c-warn-border: #ffd48a;
+  --c-warn-text: #6b3e00;
+}
+
+*{box-sizing:border-box}
+
+/* =========================
+   Utilidades
+========================= */
+.sr-only{
+  position:absolute !important; height:1px; width:1px; overflow:hidden;
+  clip:rect(1px,1px,1px,1px); white-space:nowrap;
+}
+.row{display:flex; gap:var(--gap); align-items:center}
+.row.wrap{flex-wrap:wrap}
+.gap-sm{gap:6px}
+.overflow-x{overflow-x:auto}
+
+/* =========================
+   Layout general
+========================= */
+.audit-container{max-width:980px; margin:24px auto; color:var(--c-text)}
+.card{
+  background:var(--c-bg); color:var(--c-text);
+  border-radius:var(--radius-lg); padding:16px 18px; margin:12px 0;
+  box-shadow:var(--shadow);
+}
+.card-header{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.card .meta>div{margin:2px 0}
+
+/* =========================
+   Alerts
+========================= */
+.alert{padding:10px 12px; border-radius:10px; margin:10px 0; font-size:var(--fs-14)}
+.alert.warn{background:var(--c-warn-bg); border:1px solid #ffd48a}
+.alert.error{background:var(--c-bad-bg); border:1px solid #f5a5af}
+.alert.compact{padding:8px 10px; font-size:var(--fs-13)}
+
+/* =========================
+   Form: URL
+========================= */
+.input-card{margin-top:10px}
+.input-head{margin-bottom:8px}
+.hint{margin:4px 0 0; color:#5e5e5e; font-size:var(--fs-13)}
+
+.audit-form{display:flex; gap:8px; justify-content:center; margin:12px 0 8px; flex-wrap:wrap}
+.audit-input{
+  width:100%; max-width:640px; padding:10px 12px;
+  border:1px solid rgba(0,0,0,.15); border-radius:10px; outline:none;
+}
+.audit-input:focus{border-color:var(--c-brand); box-shadow:var(--focus-ring)}
+.audit-input.invalid{border-color:#c62828; box-shadow:0 0 0 3px rgba(198,40,40,.12)}
+.audit-btn{min-width:120px}
+.btn-row{display:flex; gap:10px; flex-wrap:wrap}
+.audit-btn.outline{
+  background:transparent; border:2px solid var(--c-brand-2); color:var(--c-brand);
+}
+.audit-btn.outline:hover{background:color-mix(in srgb, var(--c-brand-2) 12%, transparent)}
+
+/* =========================
+   Historial y ejemplos
+========================= */
+.help-row{display:flex; justify-content:center; margin-top:6px}
+.examples{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.examples-label{font-size:var(--fs-12); color:var(--c-muted); margin-right:4px}
+.history-row{display:flex; align-items:center; gap:6px; margin-top:10px; flex-wrap:wrap}
+
+/* =========================
+   Chips / Badges / Levels
+========================= */
+.chips{display:flex; gap:8px; flex-wrap:wrap}
+.chip{
+  background:#eee; padding:6px 10px; border-radius:999px;
+  font-size:var(--fs-13); font-weight:600; border:0;
+}
+.chip-ok{background:var(--c-ok-bg); color:#256c3a}
+.chip-bad{background:var(--c-bad-bg); color:var(--c-bad-text)}
+.chip-bad.outline{background:transparent; border:1px solid #f5a5af; color:var(--c-bad-text)}
+.chip-neutral{background:var(--c-na-bg); color:var(--c-na-text)}
+.chip-example{background:var(--c-na-bg); color:var(--c-na-text); border:none}
+
+.pill{padding:4px 8px; border-radius:999px; font-size:var(--fs-12); font-weight:800; display:inline-block}
+.badge{comp:initial} /* para no romper; mantenemos clase */
+.badge{padding:4px 8px; border-radius:999px; font-size:var(--fs-12); font-weight:700}
+.badge-ok{background:var(--c-ok-bg); color:var(--c-ok-text)}
+.badge-bad{background:var(--c-bad-bg); color:var(--c-bad-text)}
+.badge-rendered{background:#0ea5e9; color:#fff; padding:4px 8px; border-radius:8px; font-weight:600; font-size:var(--fs-12)}
+
+.level{padding:3px 8px; border-radius:6px; font-size:var(--fs-12); font-weight:800}
+.level-A {background:var(--c-na-bg); color:var(--c-na-text)}
+.level-AA{background:#ffe9cc; color:#6e3b00}
+.level-AAA{background:#e0f2fe; color:#0c4a6e}
+
+/* Estado (tablas por principio) */
+.state{display:inline-block; padding:2px 8px; border-radius:999px; font-weight:800; font-size:var(--fs-12)}
+.state-pass{background:var(--c-ok-bg); color:var(--c-ok-text)}
+.state-warn{background:var(--c-warn-bg); color:var(--c-warn-text)}
+.state-fail{background:var(--c-bad-bg); color:var(--c-bad-text)}
+.state-na{background:var(--c-na-bg); color:var(--c-na-text)}
+
+/* Verdict (vista compacta) */
+.verdict{padding:4px 8px; border-radius:999px; font-size:var(--fs-12); font-weight:800; display:inline-block}
+.verdict-pass{background:var(--c-ok-bg); color:var(--c-ok-text)}
+.verdict-fail{background:var(--c-bad-bg); color:var(--c-bad-text)}
+.verdict-partial{background:var(--c-warn-bg); color:var(--c-warn-text)}
+.verdict-na{background:#e5e7eb; color:#374151}
+
+/* Chip de fuente RAW/RENDERED */
+.source-chip{background:var(--c-na-bg); color:var(--c-na-text); padding:2px 6px; border-radius:999px; font-size:10px; font-weight:800}
+
+/* =========================
+   Barra de puntuación
+========================= */
+.score-row{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap}
+.score-box .score-title{font-weight:600; margin-bottom:6px}
+.scorebar{position:relative; background:#eee; height:14px; border-radius:999px; overflow:hidden; min-width:280px}
+.scorebar-fill{position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg, var(--c-brand-2), var(--c-brand))}
+.scorebar-label{position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:var(--fs-12); color:#fff; font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.25)}
+
+/* Resumen por nivel */
+.level-summary{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+.level-pill{display:flex; gap:8px; align-items:center}
+.mini-bar{width:120px; height:8px; background:#eee; border-radius:999px; overflow:hidden}
+.mini-bar-fill{height:100%; width:0%; background:#16a34a}
+
+/* =========================
+   Acordeón de criterios
+========================= */
+.criteria-list{display:grid; gap:10px}
+.criterion{border:1px solid rgba(0,0,0,.08); border-radius:var(--radius); padding:10px; background:#fafafa}
+.criterion[open]{background:#fff}
+.criterion-summary{
+  list-style:none; display:grid; grid-template-columns:90px 1fr auto auto auto;
+  gap:10px; align-items:center; cursor:pointer;
+}
+.criterion-summary::-webkit-details-marker{display:none}
+.criterion-code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace; font-weight:700; color:#4a148c}
+.criterion-title{font-weight:600}
+.principle{font-size:var(--fs-12); color:var(--c-muted)}
+.criterion-body{margin-top:10px}
+
+/* =========================
+   Tablas
+========================= */
+.details-table{
+  width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden;
+}
+.details-table th, .details-table td{padding:8px 10px; font-size:var(--fs-14)}
+.details-table td{border-top:1px solid var(--c-border-soft); vertical-align:top}
+.details-table tr:first-child td{border-top:none}
+.details-table td.k{width:260px; color:var(--c-muted); font-weight:600}
+.details-table .json{margin:0; font-size:12px; background:#fafafa; padding:6px; border-radius:6px}
+
+/* Tablas compactas (listados/resúmenes) */
+.details-table.compact th, .details-table.compact td{font-size:12px; vertical-align:middle}
+.details-table.compact th:nth-child(2),
+.details-table.compact th:nth-child(3),
+.details-table.compact td:nth-child(2),
+.details-table.compact td:nth-child(3){text-align:center}
+
+/* Centrar toda la tabla dentro de la tarjeta opcionalmente */
+.details-table{margin-left:auto; margin-right:auto}
+
+/* =========================
+   Resumen (tipo TAWdis)
+========================= */
+.summary-grid{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
+  gap:12px; margin-top:6px;
+}
+.summary-card{
+  border-radius:var(--radius); padding:14px; background:#fafafa; border:1px solid #eee; box-shadow:var(--shadow);
+  color:#1b1b1b;
+}
+.summary-card.ok  {background:var(--c-ok-bg);  border-color:#8ed1a3; color:var(--c-ok-text)}
+.summary-card.bad {background:var(--c-bad-bg);  border-color:#f5a5af}
+.summary-card.warn{background:var(--c-warn-bg); border-color:#ffd48a}
+.summary-card.na  {background:#f3f4f6;        border-color:#d1d5db}
+.summary-icon{font-size:22px; line-height:1; margin-bottom:6px}
+.summary-title{font-weight:800; font-size:18px}
+.summary-sub{color:var(--c-muted); font-size:13px; margin-bottom:6px}
+.summary-break{list-style:none; padding:0; margin:0; font-size:13px}
+.summary-break li{margin:2px 0}
+
+/* =========================
+   Extras
+========================= */
+.titulo{margin:0 0 6px}
+
+/* ===== Dark mode: sobreescribe variables y algunos fondos ===== */
+:root[data-theme="dark"]{
+  --c-text:#e5e7eb;
+  --c-muted:#9ca3af;
+  --c-bg:#111827;
+  --c-border:#253046;
+  --c-border-soft:#1f2937;
+  --shadow:0 6px 18px rgba(0,0,0,.35);
+
+  /* chips/estados mantienen contraste en fondo oscuro */
+  --c-ok-bg:#0f3d2c;   --c-ok-text:#a7f3d0;
+  --c-warn-bg:#3a2a02; --c-warn-text:#fde68a;
+  --c-bad-bg:#3a0d12;  --c-bad-text:#fecdd3;
+  --c-na-bg:#1f2937;   --c-na-text:#c7d2fe;
+}
+
+/* fondo global del sitio */
+body{ background:#f6f7fb; }
+:root[data-theme="dark"] body{ background:#0b1220; }
+
+/* tarjetas y tablas en dark */
+:root[data-theme="dark"] .card{ background:#0f172a; border:1px solid var(--c-border); box-shadow:var(--shadow) }
+:root[data-theme="dark"] .details-table{ background:#0b1220; }
+:root[data-theme="dark"] .details-table td{ border-color:var(--c-border-soft); }
+
+/* resumen (colores más sobrios en dark) */
+:root[data-theme="dark"] .summary-card.bad{ background:#3a0d12; border-color:#7f2230; }
+:root[data-theme="dark"] .summary-card.warn{ background:#3a2a02; border-color:#7a5d17; }
+:root[data-theme="dark"] .summary-card.ok{ background:#064e3b; border-color:#16a34a; color:#a7f3d0; }
+:root[data-theme="dark"] .summary-card.na{ background:#0f172a; border-color:#1f2937; }
+
+/* input/botones focus ring mantiene contraste */
+:root[data-theme="dark"] .audit-input{ border-color:#374151; background:#0b1220; color:var(--c-text); }
+
+/* ====== DARK: resumen (summary) ====== */
+:root[data-theme="dark"] .summary-card{
+  background:#0f172a;              /* base neutra si no tiene modificador */
+  border:1px solid #253046;
+  color:#e5e7eb;                    /* <-- texto claro en dark */
+}
+:root[data-theme="dark"] .summary-card .summary-title{ color:#e5e7eb; }
+:root[data-theme="dark"] .summary-card .summary-sub{ color:#cbd5e1; }
+:root[data-theme="dark"] .summary-card .summary-break{ color:#cbd5e1; }
+:root[data-theme="dark"] .summary-card .summary-icon{ color:#e5e7eb; }
+
+/* variantes con buen contraste en dark */
+:root[data-theme="dark"] .summary-card.bad{
+  background:#4c1d1d;              /* rojo profundo */
+  border-color:#b91c1c;
+  color:#ffe2e7;
+}
+:root[data-theme="dark"] .summary-card.warn{
+  background:#3b2f13;              /* ámbar profundo */
+  border-color:#b45309;
+  color:#fff1c2;
+}
+:root[data-theme="dark"] .summary-card.na{
+  background:#111827;              /* gris azulado */
+  border-color:#374151;
+  color:#dbeafe;
+}
+
+.badge-ai { background:#6f42c1; color:#fff; border-radius:999px; padding:.2rem .5rem; font-weight:600; }
+.badge-rendered { background:#0ea5e9; color:#fff; border-radius:999px; padding:.2rem .5rem; font-weight:600; }
+.chip.chip-neutral { background:var(--neutral-100,#e5e7eb); color:#111; border-radius:999px; padding:.15rem .5rem; }
+
+/* por si algún elemento interno tenía color forzado */
+:root[data-theme="dark"] .summary-card * { color: inherit; }
+
+/* ====== DARK: extras útiles (opcional pero recomendado) ====== */
+:root[data-theme="dark"] .details-table th{
+  background:#0b1220; color:#e5e7eb; border-bottom:1px solid #253046;
+}
+:root[data-theme="dark"] .scorebar{ background:#1f2937; }
+:root[data-theme="dark"] .scorebar-label{ color:#f3f4f6; }
+
+/* estados/verdicts con contraste en dark */
+:root[data-theme="dark"] .state-pass{ background:#064e3b; color:#a7f3d0; }
+:root[data-theme="dark"] .state-warn{ background:#3b2f13; color:#fde68a; }
+:root[data-theme="dark"] .state-fail{ background:#4c1d1d; color:#fecdd3; }
+:root[data-theme="dark"] .state-na  { background:#1f2937; color:#c7d2fe; }
+
+:root[data-theme="dark"] .verdict-pass{ background:#064e3b; color:#a7f3d0; }
+:root[data-theme="dark"] .verdict-fail{ background:#4c1d1d; color:#fecdd3; }
+:root[data-theme="dark"] .verdict-partial{ background:#3b2f13; color:#fde68a; }
+:root[data-theme="dark"] .verdict-na{ background:#1f2937; color:#cbd5e1; }
+
+/* ====== DARK: Criterios (detalle) ====== */
+:root[data-theme="dark"] .criterion{
+  background:#0f172a;               /* card cerrada */
+  border:1px solid #253046;
+  color:#e5e7eb;
+}
+:root[data-theme="dark"] .criterion[open]{
+  background:#0b1220;               /* card abierta */
+}
+
+/* fila resumen dentro del <details> */
+:root[data-theme="dark"] .criterion-summary{
+  color:#e5e7eb;
+}
+:root[data-theme="dark"] .criterion-code{      /* 1.1.1 */
+  color:#93c5fd;
+}
+:root[data-theme="dark"] .criterion-title{     /* “Criterio” */
+  color:#e5e7eb;
+}
+:root[data-theme="dark"] .principle{           /* “Perceptible” */
+  color:#cbd5e1;
+}
+
+/* pill de nivel */
+:root[data-theme="dark"] .level-A{
+  background:#1e293b;
+  color:#c7d2fe;
+}
+:root[data-theme="dark"] .level-AA{
+  background:#3b2f13;
+  color:#fbbf24;
+}
+:root[data-theme="dark"] .level-AAA{
+  background:#2b3a20;
+  color:#86efac;
+}
+
+/* chip fuente (RAW/RENDERED) */
+:root[data-theme="dark"] .chip{ background:#1f2937; color:#cbd5e1; }
+:root[data-theme="dark"] .chip-neutral{ background:#1f2937; color:#93c5fd; }
+
+/* verdicts en dark (por si no lo añadiste antes) */
+:root[data-theme="dark"] .verdict-pass{ background:#064e3b; color:#a7f3d0; }
+:root[data-theme="dark"] .verdict-fail{ background:#4c1d1d; color:#fecdd3; }
+:root[data-theme="dark"] .verdict-partial{ background:#3b2f13; color:#fde68a; }
+:root[data-theme="dark"] .verdict-na{ background:#1f2937; color:#cbd5e1; }
+
+/* tabla de detalles dentro del panel abierto */
+:root[data-theme="dark"] .details-table{
+  background:#0b1220;
+}
+:root[data-theme="dark"] .details-table td{
+  color:#e5e7eb;
+  border-top:1px solid #253046;
+}
+:root[data-theme="dark"] .details-table .json{
+  background:#0f172a; color:#e5e7eb;
+}
+:root[data-theme="dark"] .criterion-summary:hover{
+  background:#0f172a;
+  border-radius:10px;
+}
+/* ---------- CALLOUTS GENÉRICOS ---------- */
+.callout{
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border, #e5e7eb);
+  margin: 10px 0;
+  line-height: 1.45;
+}
+
+.callout .callout-title{
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+/* “Qué evalúa” → advertencia */
+.callout.warn{
+  background: var(--c-warn-bg);
+  border-color: var(--c-warn-border);
+  color: var(--c-warn-text);
+}
+
+/* “Qué se detectó” → informativo */
+.callout.info{
+  background: var(--c-info-bg);
+  border-color: var(--c-info-border);
+  color: var(--c-info-text);
+}
+
+/* Alias por si ya usas otra clase */
+.detected-box{
+  background: var(--c-info-bg);
+  border: 1px solid var(--c-info-border);
+  color: var(--c-info-text);
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+
+/* ===== Dark mode: tokens extra para callouts ===== */
+:root[data-theme="dark"]{
+  /* ...tus tokens dark existentes... */
+
+  /* “Qué se detectó” (info) en dark */
+  --c-info-bg:#0f172a;       /* azul pizarra */
+  --c-info-border:#1e3a8a;   /* azul profundo (borde) */
+  --c-info-text:#93c5fd;     /* azul claro (texto) */
+
+  /* (opcional) fuerza advertencia si quieres tokenizarla también */
+  --c-warn-bg:#3a2a02;
+  --c-warn-border:#7a5d17;
+  --c-warn-text:#fde68a;
+}
