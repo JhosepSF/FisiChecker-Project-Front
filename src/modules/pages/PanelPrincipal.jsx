@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { API_ENDPOINTS, buildAuditEndpoint, fetchConfig } from "../../config/api";
 import "../../styles/Panel.css";
 
 function useTheme() {
@@ -12,25 +14,6 @@ function useTheme() {
   }, [theme]);
   const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
   return { theme, toggle };
-}
-
-const API_URLS = {
-  audit: "https://158.69.62.72/api/audit",   // único endpoint
-  audits: "https://158.69.62.72/api/audits",  // listado
-};
-
-// Mapeo helper para construir el endpoint según el botón
-function buildAuditEndpoint(which) {
-  const base = API_URLS.audit;
-  const q = new URLSearchParams();
-  if (which === "rendered") q.set("mode", "rendered");
-  else if (which === "ai") q.set("mode", "ai");
-  else if (which === "auto_ai") {
-    q.set("mode", "auto");
-    q.set("ai", "true");
-  }
-  const qs = q.toString();
-  return qs ? `${base}?${qs}` : base;
 }
 
 /* ========= Metadatos WCAG (ESPAÑOL) ========= */
@@ -247,6 +230,9 @@ function inferModeStrict(auditLike) {
 }
 
 export function PanelPrincipal() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   // input URL
   const [url, setUrl] = useState("");
   const [touched, setTouched] = useState(false);
@@ -268,6 +254,9 @@ export function PanelPrincipal() {
 
   // historial local
   const [history, setHistory] = useState([]);
+
+  // modal de logout
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("a11y_history") || "[]");
     setHistory(saved);
@@ -279,6 +268,10 @@ export function PanelPrincipal() {
     localStorage.setItem("a11y_history", JSON.stringify(next));
   }
 
+  // modal de borrar auditoría
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   //Tema Dark
   const { theme, toggle } = useTheme();
 
@@ -288,8 +281,8 @@ export function PanelPrincipal() {
     (async () => {
       try {
         setRecent((r) => ({ ...r, loading: true, error: "" }));
-        console.log("[FisiChecker] GET →", API_URLS.audits);
-        const res = await fetch(API_URLS.audits);
+        console.log("[FisiChecker] GET →", API_ENDPOINTS.audits);
+        const res = await fetch(API_ENDPOINTS.audits, fetchConfig);
         console.log("[FisiChecker] GET ←", res.status, res.statusText);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json(); // lista
@@ -320,7 +313,7 @@ export function PanelPrincipal() {
 
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        ...fetchConfig,
         body: JSON.stringify(payload),
       });
       console.log("[FisiChecker] POST ←", res.status, res.statusText);
@@ -430,14 +423,130 @@ export function PanelPrincipal() {
     return arr.filter((cr) => cr?.source === "ai").length;
   }, [audit]);
 
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    navigate('/logout');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
+  };
+
   return (
     <div className="container audit-container">
-      <h1 className="titulo">Fisi Checker – WCAG 2.1</h1>
+      {showLogoutModal && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+          <div className="modal-card">
+            <h3 id="logout-title">¿Cerrar sesion?</h3>
+            <p>Se cerrara tu sesion actual y volveras al inicio.</p>
+            <div className="modal-actions">
+              <button type="button" className="modal-btn ghost" onClick={cancelLogout}>
+                Cancelar
+              </button>
+              <button type="button" className="modal-btn danger" onClick={confirmLogout}>
+                Si, salir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL DE BORRAR AUDITORÍA */}
+      {showDeleteModal && deleteTarget && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+          <div className="modal-card">
+            <h3 id="delete-title">¿Borrar auditoría?</h3>
+            <p>Esta acción no se puede deshacer.<br/>¿Seguro que quieres borrar la auditoría <b>ID {deleteTarget.id}</b>?</p>
+            <div className="modal-actions">
+              <button type="button" className="modal-btn ghost" onClick={() => setShowDeleteModal(false)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="modal-btn danger"
+                onClick={async () => {
+                  setShowDeleteModal(false);
+                  try {
+                    // Obtener el token CSRF de la cookie
+                    function getCookie(name) {
+                      const value = `; ${document.cookie}`;
+                      const parts = value.split(`; ${name}=`);
+                      if (parts.length === 2) return parts.pop().split(';').shift();
+                    }
+                    const csrfToken = getCookie('csrftoken');
+                    const res = await fetch(deleteEndpoint(deleteTarget.id), {
+                      method: "DELETE",
+                      ...fetchConfig,
+                      headers: {
+                        ...fetchConfig.headers,
+                        'X-CSRFToken': csrfToken || '',
+                      },
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+                    setRecent((r) => ({ ...r, items: r.items.filter((x) => x.id !== deleteTarget.id) }));
+                  } catch (err) {
+                    alert("Error al borrar auditoría: " + (err?.message || err));
+                  }
+                  setDeleteTarget(null);
+                }}
+              >
+                Sí, borrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Header con usuario y logout */}
+      <div className="app-header">
+        <h1 className="titulo">Fisi Checker – WCAG 2.1</h1>
+        <div className="user-info">
+          <span className="user-name">👤 {user?.username || 'Usuario'}</span>
+          <button 
+            type="button" 
+            className="chip chip-neutral" 
+            onClick={toggle} 
+            title="Cambiar tema"
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+          <button 
+            type="button" 
+            className="chip chip-bad" 
+            onClick={handleLogout}
+            title="Cerrar sesión"
+          >
+            🚪 Salir
+          </button>
+        </div>
+      </div>
 
       {/* ------- AUDITORÍAS RECIENTES ------- */}
       <div className="card">
-        <div className="card-header">
+        <div className="card-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
           <h2 className="subtitulo">Auditorías recientes</h2>
+          {recent.items.length > 0 && (
+            <div style={{display: 'flex', gap: '0.5rem'}}>
+              <button 
+                type="button" 
+                className="chip chip-good"
+                onClick={() => window.open(`${API_ENDPOINTS.export.csv}`, '_blank')}
+                title="Exportar a CSV"
+              >
+                📊 CSV
+              </button>
+              <button 
+                type="button" 
+                className="chip chip-good"
+                onClick={() => window.open(`${API_ENDPOINTS.export.excel}`, '_blank')}
+                title="Exportar a Excel"
+              >
+                📗 Excel
+              </button>
+            </div>
+          )}
         </div>
 
         {recent.loading && <div className="hint">Cargando…</div>}
@@ -488,6 +597,17 @@ export function PanelPrincipal() {
                     </td>
                     <td>
                       <Link className="audit-btn" to={`/audit/${a.id}`}>Ver</Link>
+                      <button
+                        className="audit-btn danger"
+                        style={{ marginLeft: 8 }}
+                        title="Borrar auditoría"
+                        onClick={() => {
+                          setDeleteTarget(a);
+                          setShowDeleteModal(true);
+                        }}
+                      >
+                        🗑 Borrar
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -506,10 +626,6 @@ export function PanelPrincipal() {
           <h2 id="link-title" className="subtitulo">Revisar un enlace</h2>
           <p className="hint">Pega la URL que quieres auditar (HTTP o HTTPS).</p>
         </div>
-
-        <button type="button" className="chip chip-neutral" onClick={toggle} title="Cambiar tema">
-          {theme === "dark" ? "☀️ Claro" : "🌙 Oscuro"}
-        </button>
 
         <form className="audit-form" onSubmit={(e) => { e.preventDefault(); runAudit("raw"); }}>
           <label htmlFor="audit-url" className="sr-only">URL a auditar</label>
@@ -789,3 +905,5 @@ export function PanelPrincipal() {
     </div>
   );
 }
+
+const deleteEndpoint = (id) => API_ENDPOINTS.delete.audit(id);

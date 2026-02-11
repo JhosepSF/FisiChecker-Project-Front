@@ -1,24 +1,45 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { PrivateRoute } from "./components/PrivateRoute";
+import { LoginPage } from "./modules/pages/LoginPage";
+import LogoutPage from "./modules/pages/LogoutPage";
 import { PanelPrincipal } from "./modules/pages/PanelPrincipal";
 import { AuditDetailPage } from "./modules/pages/AuditDetailPage";
 
 function App() {
   return (
     <BrowserRouter>
-      <div>
+      <AuthProvider>
         <Routes>
-          {/* ruta inicial */}
+          {/* Rutas públicas */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/logout" element={<LogoutPage />} />
+          
+          {/* Ruta inicial - redirige a login o panel según autenticación */}
           <Route path="/" element={<Navigate to="/panelprincipal" />} />
           
-          {/* demas rutas */}
-          <Route path="/panelprincipal" element={<PanelPrincipal />} />
-          <Route path="/audit/:id" element={<AuditDetailPage />} />
+          {/* Rutas protegidas */}
+          <Route 
+            path="/panelprincipal" 
+            element={
+              <PrivateRoute>
+                <PanelPrincipal />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/audit/:id" 
+            element={
+              <PrivateRoute>
+                <AuditDetailPage />
+              </PrivateRoute>
+            } 
+          />
 
-          {/* fallback por si escriben algo raro */}
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/panelprincipal" replace />} />
-          
         </Routes>
-      </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

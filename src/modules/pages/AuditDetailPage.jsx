@@ -1,9 +1,9 @@
 // src/modules/pages/AuditDetailPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useLocation, Link } from "react-router-dom";
+import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { API_ENDPOINTS } from "../../config/api";
 import "../../styles/Panel.css";
-
-const API_GET = (id) => `https://158.69.62.72/api/audits/${id}`;
 
 // --- Metadatos WCAG (ES) ---
 const WCAG_META = {
@@ -435,14 +435,32 @@ function normalizeAuditToWcag(audit) {
 export function AuditDetailPage() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [audit, setAudit] = useState(location.state?.audit || null);
   const [error, setError] = useState("");
+
+  // modal de logout
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    navigate('/logout');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
+  };
 
   useEffect(() => {
     async function fetchAudit() {
       if (audit || !id) return;
       try {
-        const res = await fetch(API_GET(id));
+        const res = await fetch(API_ENDPOINTS.auditDetail(id));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setAudit(data);
@@ -457,9 +475,37 @@ export function AuditDetailPage() {
 
   return (
     <div className="container audit-container">
-      <div className="row wrap gap-sm" style={{justifyContent:"space-between", alignItems:"center"}}>
+      {showLogoutModal && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+          <div className="modal-card">
+            <h3 id="logout-title">¿Cerrar sesion?</h3>
+            <p>Se cerrara tu sesion actual y volveras al inicio.</p>
+            <div className="modal-actions">
+              <button type="button" className="modal-btn ghost" onClick={cancelLogout}>
+                Cancelar
+              </button>
+              <button type="button" className="modal-btn danger" onClick={confirmLogout}>
+                Si, salir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Header con usuario y logout */}
+      <div className="app-header">
         <h1 className="titulo">Detalle del reporte</h1>
-        <Link className="audit-btn" to="/">← Volver</Link>
+        <div className="user-info">
+          <span className="user-name">👤 {user?.username || 'Usuario'}</span>
+          <Link className="audit-btn" to="/">← Volver</Link>
+          <button 
+            type="button" 
+            className="chip chip-bad" 
+            onClick={handleLogout}
+            title="Cerrar sesión"
+          >
+            🚪 Salir
+          </button>
+        </div>
       </div>
 
       {!audit && !error && <div className="card">Cargando…</div>}
