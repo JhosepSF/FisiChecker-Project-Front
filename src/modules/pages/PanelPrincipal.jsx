@@ -15,8 +15,8 @@ function useTheme() {
 }
 
 const API_URLS = {
-  audit: "http://127.0.0.1:8000/api/audit",   // único endpoint
-  audits: "http://127.0.0.1:8000/api/audits",  // listado
+  audit: "http://158.69.62.72/api/audit",   // único endpoint
+  audits: "http://158.69.62.72/api/audits",  // listado
 };
 
 // Mapeo helper para construir el endpoint según el botón

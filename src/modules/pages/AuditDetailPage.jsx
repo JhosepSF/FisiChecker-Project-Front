@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import "../../styles/Panel.css";
 
-const API_GET = (id) => `http://127.0.0.1:8000/api/audits/${id}`;
+const API_GET = (id) => `http://158.69.62.72/api/audits/${id}`;
 
 // --- Metadatos WCAG (ES) ---
 const WCAG_META = {
