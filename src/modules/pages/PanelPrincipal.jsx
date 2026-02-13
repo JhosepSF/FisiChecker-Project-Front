@@ -317,6 +317,7 @@ export function PanelPrincipal() {
       console.log("[FisiChecker] POST →", endpoint, "payload:", payload);
 
       const csrfToken = getCookie('csrftoken');
+      console.log(csrfToken);
       const res = await fetch(endpoint, {
         method: "POST",
         ...fetchConfig,
