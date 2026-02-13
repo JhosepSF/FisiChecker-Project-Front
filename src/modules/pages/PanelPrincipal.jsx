@@ -297,6 +297,11 @@ export function PanelPrincipal() {
     };
   }, []);
 
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
   // Llamador con 4 modos (raw | rendered | ai | auto_ai)
   async function runAudit(which = "raw") {
     setTouched(true);
@@ -311,9 +316,14 @@ export function PanelPrincipal() {
       const payload = { url: finalUrl };
       console.log("[FisiChecker] POST →", endpoint, "payload:", payload);
 
+      const csrfToken = getCookie('csrftoken');
       const res = await fetch(endpoint, {
         method: "POST",
         ...fetchConfig,
+        headers: {
+          ...fetchConfig.headers,
+          'X-CSRFToken': csrfToken || '',
+        },
         body: JSON.stringify(payload),
       });
       console.log("[FisiChecker] POST ←", res.status, res.statusText);
