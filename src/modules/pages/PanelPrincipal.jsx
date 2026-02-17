@@ -543,7 +543,13 @@ export function PanelPrincipal() {
           {recent.items.length > 0 && (
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
-                onClick={() => navigate("/colab-analysis")}
+                type="button"
+                className="chip chip-neutral"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate("/colab-analysis");
+                }}
                 title="Ver código de análisis en Google Colab"
               >
                 🚀 Colab
