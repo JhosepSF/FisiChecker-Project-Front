@@ -543,8 +543,6 @@ export function PanelPrincipal() {
           {recent.items.length > 0 && (
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
-                type="button"
-                className="chip chip-neutral"
                 onClick={() => navigate("/colab-analysis")}
                 title="Ver código de análisis en Google Colab"
               >
