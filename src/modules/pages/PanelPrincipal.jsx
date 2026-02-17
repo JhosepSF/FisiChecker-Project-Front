@@ -542,19 +542,15 @@ export function PanelPrincipal() {
           <h2 className="subtitulo">Auditorías recientes</h2>
           {recent.items.length > 0 && (
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button
-                type="button"
+              <Link
+                to="/colab-analysis"
                 className="chip chip-neutral"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  navigate("/colab-analysis");
-                }}
                 title="Ver código de análisis en Google Colab"
+                style={{ textDecoration: "none" }}
               >
                 🚀 Colab
-              </button>
-
+              </Link>
+              
               <button
                 type="button"
                 className="chip chip-good"
