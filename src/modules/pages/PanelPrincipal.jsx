@@ -272,10 +272,13 @@ export function PanelPrincipal() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  //Tema Dark
+  // Tema Dark
   const { theme, toggle } = useTheme();
 
-  // Efecto que carga el listado de auditorías
+  // ========= ORDEN DEL FRONT (uiId) =========
+  const uiCounter = React.useRef(1);
+
+  // Efecto que carga el listado de auditorías (UNA sola vez) + asigna uiId
   useEffect(() => {
     let abort = false;
     (async () => {
@@ -285,8 +288,12 @@ export function PanelPrincipal() {
         const res = await fetch(API_ENDPOINTS.audits, fetchConfig);
         console.log("[FisiChecker] GET ←", res.status, res.statusText);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json(); // lista
-        if (!abort) setRecent({ loading: false, error: "", items: Array.isArray(data) ? data : [] });
+        const data = await res.json();
+
+        const arr = Array.isArray(data) ? data : [];
+        const withUi = arr.map((item) => ({ ...item, uiId: uiCounter.current++ }));
+
+        if (!abort) setRecent({ loading: false, error: "", items: withUi });
       } catch (e) {
         console.error("[FisiChecker] GET /audits ERROR:", e);
         if (!abort) setRecent({ loading: false, error: e?.message || "Error", items: [] });
@@ -297,11 +304,19 @@ export function PanelPrincipal() {
     };
   }, []);
 
+  const recentSorted = useMemo(() => {
+    const arr = Array.isArray(recent.items) ? [...recent.items] : [];
+    // Más reciente primero
+    arr.sort((a, b) => new Date(b.fetched_at || 0) - new Date(a.fetched_at || 0));
+    return arr;
+  }, [recent.items]);
+
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+    if (parts.length === 2) return parts.pop().split(";").shift();
   }
+
   // Llamador con 4 modos (raw | rendered | ai | auto_ai)
   async function runAudit(which = "raw") {
     setTouched(true);
@@ -316,13 +331,13 @@ export function PanelPrincipal() {
       const payload = { url: finalUrl };
       console.log("[FisiChecker] POST →", endpoint, "payload:", payload);
 
-      const csrfToken = getCookie('csrftoken');
+      const csrfToken = getCookie("csrftoken");
       const res = await fetch(endpoint, {
         method: "POST",
         ...fetchConfig,
         headers: {
           ...fetchConfig.headers,
-          'X-CSRFToken': csrfToken || '',
+          "X-CSRFToken": csrfToken || "",
         },
         body: JSON.stringify(payload),
       });
@@ -335,8 +350,11 @@ export function PanelPrincipal() {
       const data = await res.json();
       setAudit({ ...data, url: finalUrl });
 
-      // refrescar listado rápido (optimista)
-      setRecent((r) => ({ ...r, items: [data, ...r.items].slice(0, 20) }));
+      // refrescar listado rápido (optimista) + uiId
+      setRecent((r) => ({
+        ...r,
+        items: [{ ...data, uiId: uiCounter.current++ }, ...r.items].slice(0, 20),
+      }));
 
       pushHistory(finalUrl);
     } catch (e) {
@@ -350,14 +368,12 @@ export function PanelPrincipal() {
   // Normaliza a mapa por código
   const wcag = useMemo(() => (!audit ? {} : normalizeAuditToWcag(audit)), [audit]);
 
-  // Conteos por veredicto (global). Preferimos datos crudos de criterion_results para evitar desajustes con el mapa.
+  // Conteos por veredicto (global)
   const verdictCounts = useMemo(() => {
-    // 1) Si el backend ya envió conteos (lista), usarlos directo
     if (audit?.verdict_counts) return audit.verdict_counts;
 
     const c = { pass: 0, fail: 0, partial: 0, na: 0 };
 
-    // 2) Si tenemos criterion_results completos, contar ahí (fuente más fiel)
     if (Array.isArray(audit?.criterion_results)) {
       audit.criterion_results.forEach((r) => {
         const v = (r?.verdict ?? (r?.passed ? "pass" : "fail")).toLowerCase();
@@ -366,7 +382,6 @@ export function PanelPrincipal() {
       return c;
     }
 
-    // 3) Fallback al mapa normalizado si no hay criterion_results (p.ej. datos antiguos)
     Object.values(wcag).forEach((r) => {
       const v = (r?.verdict ?? (r?.passed ? "pass" : "fail")).toLowerCase();
       if (c[v] !== undefined) c[v] += 1;
@@ -422,9 +437,8 @@ export function PanelPrincipal() {
     });
   }, [wcag, filterPrinciple, filterLevel, filterState, search]);
 
-  const samples = ["example.com", "wikipedia.org", "peru.gob.pe"];
+
   const fmtDate = (iso) => (iso ? new Date(iso).toLocaleString() : "—");
-  // El backend envía score en escala 0-2, convertimos a porcentaje 0-100
   const pct = (v) => (v == null ? "—" : Math.round(((v || 0) / 2) * 100));
 
   // Sugerencia de AI usado en esta auditoría (cabecera)
@@ -433,18 +447,12 @@ export function PanelPrincipal() {
     return arr.filter((cr) => cr?.source === "ai").length;
   }, [audit]);
 
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
+  const handleLogout = () => setShowLogoutModal(true);
   const confirmLogout = () => {
     setShowLogoutModal(false);
-    navigate('/logout');
+    navigate("/logout");
   };
-
-  const cancelLogout = () => {
-    setShowLogoutModal(false);
-  };
+  const cancelLogout = () => setShowLogoutModal(false);
 
   return (
     <div className="container audit-container">
@@ -464,12 +472,17 @@ export function PanelPrincipal() {
           </div>
         </div>
       )}
+
       {/* MODAL DE BORRAR AUDITORÍA */}
       {showDeleteModal && deleteTarget && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-title">
           <div className="modal-card">
             <h3 id="delete-title">¿Borrar auditoría?</h3>
-            <p>Esta acción no se puede deshacer.<br/>¿Seguro que quieres borrar la auditoría <b>ID {deleteTarget.id}</b>?</p>
+            <p>
+              Esta acción no se puede deshacer.
+              <br />
+              ¿Seguro que quieres borrar la auditoría <b>ID {deleteTarget.id}</b>?
+            </p>
             <div className="modal-actions">
               <button type="button" className="modal-btn ghost" onClick={() => setShowDeleteModal(false)}>
                 Cancelar
@@ -480,23 +493,22 @@ export function PanelPrincipal() {
                 onClick={async () => {
                   setShowDeleteModal(false);
                   try {
-                    // Obtener el token CSRF de la cookie
-                    function getCookie(name) {
-                      const value = `; ${document.cookie}`;
-                      const parts = value.split(`; ${name}=`);
-                      if (parts.length === 2) return parts.pop().split(';').shift();
-                    }
-                    const csrfToken = getCookie('csrftoken');
+                    const csrfToken = getCookie("csrftoken");
                     const res = await fetch(deleteEndpoint(deleteTarget.id), {
                       method: "DELETE",
                       ...fetchConfig,
                       headers: {
                         ...fetchConfig.headers,
-                        'X-CSRFToken': csrfToken || '',
+                        "X-CSRFToken": csrfToken || "",
                       },
                     });
                     if (!res.ok) throw new Error(await res.text());
-                    setRecent((r) => ({ ...r, items: r.items.filter((x) => x.id !== deleteTarget.id) }));
+
+                    // SOLO quitar de la lista (no agregar nada)
+                    setRecent((r) => ({
+                      ...r,
+                      items: r.items.filter((x) => x.id !== deleteTarget.id),
+                    }));
                   } catch (err) {
                     alert("Error al borrar auditoría: " + (err?.message || err));
                   }
@@ -509,25 +521,16 @@ export function PanelPrincipal() {
           </div>
         </div>
       )}
+
       {/* Header con usuario y logout */}
       <div className="app-header">
         <h1 className="titulo">Fisi Checker – WCAG 2.1</h1>
         <div className="user-info">
-          <span className="user-name">👤 {user?.username || 'Usuario'}</span>
-          <button 
-            type="button" 
-            className="chip chip-neutral" 
-            onClick={toggle} 
-            title="Cambiar tema"
-          >
+          <span className="user-name">👤 {user?.username || "Usuario"}</span>
+          <button type="button" className="chip chip-neutral" onClick={toggle} title="Cambiar tema">
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
-          <button 
-            type="button" 
-            className="chip chip-bad" 
-            onClick={handleLogout}
-            title="Cerrar sesión"
-          >
+          <button type="button" className="chip chip-bad" onClick={handleLogout} title="Cerrar sesión">
             🚪 Salir
           </button>
         </div>
@@ -535,22 +538,31 @@ export function PanelPrincipal() {
 
       {/* ------- AUDITORÍAS RECIENTES ------- */}
       <div className="card">
-        <div className="card-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className="subtitulo">Auditorías recientes</h2>
           {recent.items.length > 0 && (
-            <div style={{display: 'flex', gap: '0.5rem'}}>
-              <button 
-                type="button" 
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                type="button"
+                className="chip chip-neutral"
+                onClick={() => window.open("/colab-analysis", "_blank")}
+                title="Ver código de análisis en Google Colab"
+              >
+                🚀 Colab
+              </button>
+
+              <button
+                type="button"
                 className="chip chip-good"
-                onClick={() => window.open(`${API_ENDPOINTS.export.csv}`, '_blank')}
+                onClick={() => window.open(`${API_ENDPOINTS.export.csv}`, "_blank")}
                 title="Exportar a CSV"
               >
                 📊 CSV
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="chip chip-good"
-                onClick={() => window.open(`${API_ENDPOINTS.export.excel}`, '_blank')}
+                onClick={() => window.open(`${API_ENDPOINTS.export.excel}`, "_blank")}
                 title="Exportar a Excel"
               >
                 📗 Excel
@@ -562,83 +574,99 @@ export function PanelPrincipal() {
         {recent.loading && <div className="hint">Cargando…</div>}
         {recent.error && <div className="alert error">Error: {recent.error}</div>}
 
-        {!recent.loading && !recent.error && (
-          <div className="overflow-x">
-            <table className="details-table compact">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>URL</th>
-                  <th>Título</th>
-                  <th>Score</th>
-                  <th>HTTP</th>
-                  <th>Fecha</th>
-                  <th>Modo</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.items.map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.id}</td>
-                    <td style={{maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
-                      <a href={a.url} target="_blank" rel="noreferrer">{a.url}</a>
-                    </td>
-                    <td style={{maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
-                      {a.page_title || "—"}
-                    </td>
-                    <td>
-                      {a.score == null
-                        ? <span className="chip chip-neutral">—</span>
-                        : <span className="chip chip-neutral">{pct(a.score)}%</span>}
-                    </td>
-                    <td>{a.status_code}</td>
-                    <td>{fmtDate(a.fetched_at)}</td>
-                    <td>
-                      <span
-                        className={{
-                          "RAW": "chip chip-neutral",
-                          "RENDERED": "badge badge-rendered",
-                          "AI": "badge badge-ai",
-                        }[inferModeStrict(a)] || "chip chip-neutral"}
-                      >
-                        {inferModeStrict(a)}
-                      </span>
-                    </td>
-                    <td>
-                      <Link className="audit-btn" to={`/audit/${a.id}`}>Ver</Link>
-                      <button
-                        className="audit-btn danger"
-                        style={{ marginLeft: 8 }}
-                        title="Borrar auditoría"
-                        onClick={() => {
-                          setDeleteTarget(a);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        🗑 Borrar
-                      </button>
-                    </td>
+        <div className="table-scroll">
+          {!recent.loading && !recent.error && (
+            <div className="overflow-x">
+              <table className="details-table compact">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>URL</th>
+                    <th>Título</th>
+                    <th>Score</th>
+                    <th>HTTP</th>
+                    <th>Fecha</th>
+                    <th>Modo</th>
+                    <th></th>
                   </tr>
-                ))}
-                {recent.items.length === 0 && (
-                  <tr><td colSpan={8}><em>No hay auditorías aún.</em></td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {recentSorted.map((a, idx) => {
+                    const n = recentSorted.length - idx;
+                    return (
+                      <tr key={a.id}>
+                        <td>{n}</td>
+
+                        <td style={{maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
+                          <a href={a.url} target="_blank" rel="noreferrer">{a.url}</a>
+                        </td>
+
+                        <td style={{maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
+                          {a.page_title || "—"}
+                        </td>
+
+                        <td>
+                          {a.score == null
+                            ? <span className="chip chip-neutral">—</span>
+                            : <span className="chip chip-neutral">{pct(a.score)}%</span>}
+                        </td>
+
+                        <td>{a.status_code}</td>
+                        <td>{fmtDate(a.fetched_at)}</td>
+
+                        <td>
+                          <span
+                            className={{
+                              "RAW": "chip chip-neutral",
+                              "RENDERED": "badge badge-rendered",
+                              "AI": "badge badge-ai",
+                            }[inferModeStrict(a)] || "chip chip-neutral"}
+                          >
+                            {inferModeStrict(a)}
+                          </span>
+                        </td>
+
+                        <td>
+                          <Link className="audit-btn" to={`/audit/${a.id}`}>Ver</Link>
+                          <button
+                            className="audit-btn danger"
+                            style={{ marginLeft: 8 }}
+                            title="Borrar auditoría"
+                            onClick={() => {
+                              setDeleteTarget(a);
+                              setShowDeleteModal(true);
+                            }}
+                          >
+                            🗑 Borrar
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {recent.items.length === 0 && (
+                    <tr><td colSpan={8}><em>No hay auditorías aún.</em></td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* APARTADO: insertar link */}
       <div className="card input-card" role="region" aria-labelledby="link-title">
         <div className="input-head">
-          <h2 id="link-title" className="subtitulo">Revisar un enlace</h2>
+          <h2 id="link-title" className="subtitulo">
+            Revisar un enlace
+          </h2>
           <p className="hint">Pega la URL que quieres auditar (HTTP o HTTPS).</p>
         </div>
 
         <form className="audit-form" onSubmit={(e) => { e.preventDefault(); runAudit("raw"); }}>
-          <label htmlFor="audit-url" className="sr-only">URL a auditar</label>
+          <label htmlFor="audit-url" className="sr-only">
+            URL a auditar
+          </label>
           <input
             id="audit-url"
             className={`audit-input ${touched && !valid ? "invalid" : ""}`}
@@ -656,7 +684,6 @@ export function PanelPrincipal() {
             aria-describedby="url-help"
           />
 
-          {/* Botones de ejecución: renderizado (rápido) y auto+IA (los 3 en 1) */}
           <div className="btn-row">
             <button
               className="audit-btn"
@@ -715,7 +742,10 @@ export function PanelPrincipal() {
                 key={h}
                 type="button"
                 className="chip chip-neutral"
-                onClick={() => { setUrl(h); setTouched(false); }}
+                onClick={() => {
+                  setUrl(h);
+                  setTouched(false);
+                }}
                 title={`Cargar ${h}`}
               >
                 {h}
@@ -724,7 +754,10 @@ export function PanelPrincipal() {
             <button
               type="button"
               className="chip chip-bad"
-              onClick={() => { localStorage.removeItem("a11y_history"); setHistory([]); }}
+              onClick={() => {
+                localStorage.removeItem("a11y_history");
+                setHistory([]);
+              }}
               title="Limpiar historial"
             >
               Limpiar
@@ -742,37 +775,57 @@ export function PanelPrincipal() {
       {/* ---------- UI del resultado activo ---------- */}
       {audit && (
         <>
-          {/* Cabecera + puntuación */}
           <div className="card">
             <div className="card-header">
               <div className="meta">
-                <div><strong>URL:</strong> <a href={audit.url} target="_blank" rel="noreferrer">{audit.url}</a></div>
-                <div><strong>Título:</strong> {audit.page_title || "—"}</div>
+                <div>
+                  <strong>URL:</strong>{" "}
+                  <a href={audit.url} target="_blank" rel="noreferrer">
+                    {audit.url}
+                  </a>
+                </div>
+                <div>
+                  <strong>Título:</strong> {audit.page_title || "—"}
+                </div>
               </div>
               <div className="meta">
-                <div><strong>HTTP:</strong> {audit.status_code}</div>
-                <div><strong>Tiempo:</strong> {audit.elapsed_ms} ms</div>
-                <div><strong>Fecha:</strong> {audit.fetched_at ? new Date(audit.fetched_at).toLocaleString() : "—"}</div>
+                <div>
+                  <strong>HTTP:</strong> {audit.status_code}
+                </div>
+                <div>
+                  <strong>Tiempo:</strong> {audit.elapsed_ms} ms
+                </div>
+                <div>
+                  <strong>Fecha:</strong> {audit.fetched_at ? new Date(audit.fetched_at).toLocaleString() : "—"}
+                </div>
               </div>
             </div>
 
             <div className="row wrap gap-sm">
               <span
-                className={{
-                  "RAW": "chip chip-neutral",
-                  "RENDERED": "badge badge-rendered",
-                  "AI": "badge badge-ai",
-                }[inferModeStrict(audit)] || "chip chip-neutral"}
+                className={
+                  {
+                    RAW: "chip chip-neutral",
+                    RENDERED: "badge badge-rendered",
+                    AI: "badge badge-ai",
+                  }[inferModeStrict(audit)] || "chip chip-neutral"
+                }
               >
                 {inferModeStrict(audit)}
               </span>
 
-              {audit.rendered && <span className="badge badge-rendered" title="Auditado con DOM/CSS renderizado">RENDERED</span>}
+              {audit.rendered && (
+                <span className="badge badge-rendered" title="Auditado con DOM/CSS renderizado">
+                  RENDERED
+                </span>
+              )}
               {Array.isArray(audit.rendered_codes) && audit.rendered_codes.length > 0 && (
                 <span className="chip chip-neutral">Sobrescritos: {audit.rendered_codes.join(", ")}</span>
               )}
               {aiUsedCount > 0 && (
-                <span className="badge badge-ai" title="Criterios resueltos con IA">AI · {aiUsedCount}</span>
+                <span className="badge badge-ai" title="Criterios resueltos con IA">
+                  AI · {aiUsedCount}
+                </span>
               )}
               {audit.rendered_error && (
                 <div className="alert warn">Problema en medición renderizada: {String(audit.rendered_error)}</div>
@@ -785,7 +838,6 @@ export function PanelPrincipal() {
                 <ScoreBar value={audit.score} />
               </div>
 
-              {/* Breakdown por nivel */}
               <div className="level-summary">
                 {LEVELS.map((lv) => {
                   const t = levelBreakdown?.[lv]?.total || 0;
@@ -794,8 +846,12 @@ export function PanelPrincipal() {
                   return (
                     <div key={lv} className="level-pill">
                       <span className={`level level-${lv}`}>{lv}</span>
-                      <div className="mini-bar"><div className="mini-bar-fill" style={{ width: `${ratio}%` }} /></div>
-                      <span className="mini-bar-label">{p}/{t}</span>
+                      <div className="mini-bar">
+                        <div className="mini-bar-fill" style={{ width: `${ratio}%` }} />
+                      </div>
+                      <span className="mini-bar-label">
+                        {p}/{t}
+                      </span>
                     </div>
                   );
                 })}
@@ -809,7 +865,6 @@ export function PanelPrincipal() {
             </div>
           </div>
 
-          {/* ------- RESUMEN (tarjetas) ------- */}
           <div className="card">
             <h2 className="subtitulo">Resumen</h2>
             <div className="summary-grid">
@@ -868,7 +923,7 @@ export function PanelPrincipal() {
                 const meta = META(r.code);
                 return {
                   code: r.code,
-                  title: r.title || meta.title,         // TÍTULO EN ESPAÑOL
+                  title: r.title || meta.title,
                   level: r.level || meta.level,
                   verdict: r.verdict ?? (r.passed ? "pass" : "fail"),
                   source: r.source,
@@ -876,7 +931,7 @@ export function PanelPrincipal() {
               })
               .sort((a, b) => {
                 const order = { fail: 0, partial: 1, na: 2, pass: 3 };
-                return (order[a.verdict] - order[b.verdict]) || a.code.localeCompare(b.code);
+                return order[a.verdict] - order[b.verdict] || a.code.localeCompare(b.code);
               });
 
             if (rows.length === 0) return null;
@@ -888,7 +943,7 @@ export function PanelPrincipal() {
                   <table className="details-table compact">
                     <thead>
                       <tr>
-                        <th style={{minWidth: 110}}>Pauta</th>
+                        <th style={{ minWidth: 110 }}>Pauta</th>
                         <th>Nivel</th>
                         <th>Resultado</th>
                       </tr>
@@ -896,11 +951,14 @@ export function PanelPrincipal() {
                     <tbody>
                       {rows.map((r) => (
                         <tr key={r.code}>
-                          <td><b>{r.code}</b> — {r.title}</td>
-                          <td><LevelTag level={r.level} /></td>
                           <td>
-                            <VerdictBadge verdict={r.verdict} />{" "}
-                            <SourceChip source={r.source} />
+                            <b>{r.code}</b> — {r.title}
+                          </td>
+                          <td>
+                            <LevelTag level={r.level} />
+                          </td>
+                          <td>
+                            <VerdictBadge verdict={r.verdict} /> <SourceChip source={r.source} />
                           </td>
                         </tr>
                       ))}

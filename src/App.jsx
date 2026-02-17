@@ -5,6 +5,8 @@ import { LoginPage } from "./modules/pages/LoginPage";
 import LogoutPage from "./modules/pages/LogoutPage";
 import { PanelPrincipal } from "./modules/pages/PanelPrincipal";
 import { AuditDetailPage } from "./modules/pages/AuditDetailPage";
+import { ColabAnalysisPage } from "./modules/pages/ColabAnalysisPage";
+
 
 function App() {
   return (
@@ -27,11 +29,21 @@ function App() {
               </PrivateRoute>
             } 
           />
+
           <Route 
             path="/audit/:id" 
             element={
               <PrivateRoute>
                 <AuditDetailPage />
+              </PrivateRoute>
+            } 
+          />
+
+          <Route 
+            path="/colab-analysis" 
+            element={
+              <PrivateRoute>
+                <ColabAnalysisPage />
               </PrivateRoute>
             } 
           />
