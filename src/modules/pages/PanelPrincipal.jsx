@@ -545,7 +545,7 @@ export function PanelPrincipal() {
               <button
                 type="button"
                 className="chip chip-neutral"
-                onClick={() => window.open("/colab-analysis", "_blank")}
+                onClick={() => navigate("/colab-analysis")}
                 title="Ver código de análisis en Google Colab"
               >
                 🚀 Colab
