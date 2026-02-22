@@ -111,8 +111,8 @@ function LevelTag({ level }) {
 }
 function ScoreBar({ value }) {
   const isNull = value == null || Number.isNaN(value);
-  // El backend envía score en escala 0-2, convertimos a porcentaje 0-100
-  const pct = isNull ? 0 : Math.round((value / 2) * 100);
+  // El backend envía score en escala 0-1, convertimos a porcentaje 0-100
+  const pct = isNull ? 0 : Math.round((value) * 100);
   return (
     <div className="scorebar">
       <div className="scorebar-fill" style={{ width: `${pct}%` }} />
