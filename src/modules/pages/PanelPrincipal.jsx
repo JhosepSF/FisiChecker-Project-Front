@@ -439,7 +439,8 @@ export function PanelPrincipal() {
 
 
   const fmtDate = (iso) => (iso ? new Date(iso).toLocaleString() : "—");
-  const pct = (v) => (v == null ? "—" : Math.round(((v || 0) / 2) * 100));
+  // Backend envía score en escala 0-1 (0-100%)
+  const pct = (v) => (v == null ? "—" : Math.round((v || 0) * 100));
 
   // Sugerencia de AI usado en esta auditoría (cabecera)
   const aiUsedCount = useMemo(() => {
