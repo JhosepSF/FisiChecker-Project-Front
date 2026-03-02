@@ -705,16 +705,6 @@ export function PanelPrincipal() {
             >
               {loading ? "Auditando..." : "Solo IA"}
             </button>
-
-            <button
-              className="audit-btn secondary"
-              type="button"
-              onClick={() => runAudit("auto_ai")}
-              disabled={loading || !valid}
-              title="Modo automático: corre crudo, renderizado y IA en una sola pasada (si el backend lo soporta)"
-            >
-              {loading ? "Auditando..." : "Auto + IA"}
-            </button>
           </div>
         </form>
 
